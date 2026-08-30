@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目管理 - 组会汇报助手</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">项目管理</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">📈</span>
+          <span>仪表盘</span>
+        </button>
+        <button class="nav-item" data-page="projects">
+          <span class="nav-icon">📁</span>
+          <span>项目管理</span>
+        </button>
+        <button class="nav-item" data-page="tasks">
+          <span class="nav-icon">✅</span>
+          <span>任务看板</span>
+        </button>
+        <button class="nav-item" data-page="report">
+          <span class="nav-icon">🎤</span>
+          <span>组会汇报</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost btn-block" id="btn-export">
+          <span>📤</span> 导出数据
+        </button>
+        <button class="btn btn-ghost btn-block" id="btn-import">
+          <span>📥</span> 导入数据
+        </button>
+        <input type="file" id="file-import" accept=".json" style="display:none">
+        <button class="btn btn-ghost btn-block" id="btn-theme">
+          <span id="theme-icon">🌙</span> <span id="theme-text">深色模式</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main">
+      <!-- 仪表盘页面 -->
+      <section class="page active" id="page-dashboard">
+        <header class="page-header">
+          <h1>仪表盘</h1>
+          <p class="page-subtitle">项目总览与进度概览</p>
+        </header>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3>项目进度</h3>
+            </div>
+            <div class="card-body" id="project-progress-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>最近动态</h3>
+            </div>
+            <div class="card-body" id="recent-activity"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 项目管理页面 -->
+      <section class="page" id="page-projects">
+        <header class="page-header">
+          <h1>项目管理</h1>
+          <p class="page-subtitle">管理所有研究项目</p>
+          <button class="btn btn-primary" id="btn-add-project">
+            <span>➕</span> 新建项目
+          </button>
+        </header>
+        <div class="project-grid" id="project-grid"></div>
+      </section>
+
+      <!-- 任务看板页面 -->
+      <section class="page" id="page-tasks">
+        <header class="page-header">
+          <h1>任务看板</h1>
+          <p class="page-subtitle">
+            <select id="task-project-select" class="select-inline"></select>
+          </p>
+          <button class="btn btn-primary" id="btn-add-task">
+            <span>➕</span> 新建任务
+          </button>
+        </header>
+        <div class="kanban-board">
+          <div class="kanban-column" data-status="todo">
+            <div class="kanban-header">
+              <span class="kanban-title">📋 待办</span>
+              <span class="kanban-count" id="count-todo">0</span>
+            </div>
+            <div class="kanban-list" id="list-todo"></div>
+          </div>
+          <div class="kanban-column" data-status="in-progress">
+            <div class="kanban-header">
+              <span class="kanban-title">🚀 进行中</span>
+              <span class="kanban-count" id="count-in-progress">0</span>
+            </div>
+            <div class="kanban-list" id="list-in-progress"></div>
+          </div>
+          <div class="kanban-column" data-status="done">
+            <div class="kanban-header">
+              <span class="kanban-title">🎉 已完成</span>
+              <span class="kanban-count" id="count-done">0</span>
+            </div>
+            <div class="kanban-list" id="list-done"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 组会汇报页面 -->
+      <section class="page" id="page-report">
+        <header class="page-header">
+          <h1>组会汇报</h1>
+          <p class="page-subtitle">
+            <select id="report-project-select" class="select-inline"></select>
+          </p>
+          <div class="header-actions">
+            <button class="btn btn-ghost" id="btn-print-report">
+              <span>🖨️</span> 打印/导出 PDF
+            </button>
+          </div>
+        </header>
+        <div class="report-container" id="report-container"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 模态框：项目编辑 -->
+  <div class="modal" id="modal-project">
+    <div class="modal-mask"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="project-modal-title">新建项目</h3>
+        <button class="modal-close" data-close="modal-project">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-project">
+          <input type="hidden" id="project-id">
+          <div class="form-group">
+            <label>项目名称 *</label>
+            <input type="text" id="project-name" required placeholder="请输入项目名称">
+          </div>
+          <div class="form-group">
+            <label>项目描述</label>
+            <textarea id="project-desc" rows="3" placeholder="简要描述项目目标和内容"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>开始日期</label>
+              <input type="date" id="project-start">
+            </div>
+            <div class="form-group">
+              <label>截止日期</label>
+              <input type="date" id="project-end">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <select id="project-status">
+              <option value="planning">计划中</option>
+              <option value="active">进行中</option>
+              <option value="paused">暂停</option>
+              <option value="completed">已完成</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>成员（用逗号分隔）</label>
+            <input type="text" id="project-members" placeholder="张三, 李四, 王五">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-project">取消</button>
+        <button class="btn btn-primary" id="btn-save-project">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模态框：任务编辑 -->
+  <div class="modal" id="modal-task">
+    <div class="modal-mask"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="task-modal-title">新建任务</h3>
+        <button class="modal-close" data-close="modal-task">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-task">
+          <input type="hidden" id="task-id">
+          <div class="form-group">
+            <label>任务标题 *</label>
+            <input type="text" id="task-title" required placeholder="请输入任务标题">
+          </div>
+          <div class="form-group">
+            <label>任务描述</label>
+            <textarea id="task-desc" rows="3" placeholder="详细描述任务内容"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>所属项目</label>
+              <select id="task-project"></select>
+            </div>
+            <div class="form-group">
+              <label>状态</label>
+              <select id="task-status">
+                <option value="todo">待办</option>
+                <option value="in-progress">进行中</option>
+                <option value="done">已完成</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>优先级</label>
+              <select id="task-priority">
+                <option value="low">低</option>
+                <option value="medium" selected>中</option>
+                <option value="high">高</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>截止日期</label>
+              <input type="date" id="task-due">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>负责人</label>
+            <input type="text" id="task-assignee" placeholder="负责人姓名">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-task">取消</button>
+        <button class="btn btn-primary" id="btn-save-task">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 确认对话框 -->
+  <div class="modal" id="modal-confirm">
+    <div class="modal-mask"></div>
+    <div class="modal-dialog modal-sm">
+      <div class="modal-body">
+        <p id="confirm-message">确定要删除吗？</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-confirm">取消</button>
+        <button class="btn btn-danger" id="btn-confirm-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 提示 -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
